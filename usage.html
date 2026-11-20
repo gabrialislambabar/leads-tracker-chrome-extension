@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadTracker — Website Usage</title>
+    <link rel="stylesheet" href="usage.css">
+</head>
+<body>
+    <div class="usage-container">
+        <!-- Dashboard Top Header -->
+        <header class="dashboard-header">
+            <div class="header-brand">
+                <div class="brand-logo" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                    </svg>
+                </div>
+                <div class="brand-titles">
+                    <h1 class="brand-name">Website Usage</h1>
+                    <p class="brand-subtitle">Private active-time tracking by domain</p>
+                </div>
+            </div>
+
+            <!-- Real-time Tracking Status Pill -->
+            <div id="tracking-status" class="tracking-pill" aria-label="Tracking status">
+                <span class="status-beacon" aria-hidden="true">
+                    <span class="status-dot"></span>
+                    <span class="status-ping"></span>
+                </span>
+                <span id="tracking-text" class="tracking-text">Tracking paused</span>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dashboard-main">
+            <!-- Day Navigation & Total Time Summary Card -->
+            <section class="card overview-card" aria-label="Day summary">
+                <div class="day-nav-bar">
+                    <div class="day-nav-group">
+                        <button type="button" id="prev-day" class="nav-button" title="View previous day" aria-label="Previous day">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                            <span>Previous day</span>
+                        </button>
+                        <button type="button" id="next-day" class="nav-button" title="View next day" aria-label="Next day" disabled>
+                            <span>Next day</span>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+
+                    <button type="button" id="today-btn" class="chip-today-button" hidden aria-label="Return to today">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                        <span>Back to today</span>
+                    </button>
+                </div>
+
+                <div class="total-stats-block">
+                    <div class="total-stats-meta">
+                        <span class="stats-label">ACTIVE BROWSING TIME</span>
+                        <h2 id="day-label" class="day-title">Today</h2>
+                    </div>
+                    <div id="day-total" class="stats-number" aria-live="polite">0m</div>
+                </div>
+            </section>
+
+            <!-- Ranked Websites Section -->
+            <section class="card ranked-card" aria-labelledby="ranked-heading">
+                <div class="card-head">
+                    <div class="card-head-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="card-head-icon" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <h3 id="ranked-heading">Websites &amp; Time Spent</h3>
+                    </div>
+                    <span id="site-count" class="count-tag" aria-label="Count of tracked sites">0 websites</span>
+                </div>
+
+                <ul id="time-list" class="time-ranked-list"></ul>
+
+                <div id="time-empty" class="empty-state">
+                    <svg class="empty-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <p class="empty-title">No time tracked for this day</p>
+                    <p class="empty-subtitle">Active time is automatically measured while focused on standard web pages</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Privacy & Local Storage Note -->
+        <footer class="dashboard-footer">
+            <div class="privacy-note">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="privacy-icon" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <p><strong>Privacy note:</strong> Tracking is local to this browser using <code>chrome.storage.local</code>. Time totals are grouped by domain name only. Page contents, URLs beyond domain, form inputs, and full browsing history are never tracked or uploaded anywhere.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="usage.js"></script>
+</body>
+</html>

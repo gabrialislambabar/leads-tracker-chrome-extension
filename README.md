@@ -1,106 +1,90 @@
 # Lead Tracker — Links & Time
 
-A small Manifest V3 Chrome extension for saving useful links and seeing how much active time you spend on each website, day by day. Everything is stored locally in the browser.
+A Manifest V3 Chrome extension for quickly saving links and privately tracking active time spent on websites, stored locally on your device.
 
 ## Features
 
-- **Time spent** — tracks the active website while Chrome is focused and the user is active.
-- **Daily totals** — shows today's sites from most time to least, with previous/next day controls and a date picker.
-- **Readable durations** — for example `youtube.com — 1h 24m`, with a simple bar for each site.
-- **Saved links** — save a typed URL or the current tab, search saved links, open them in a new tab, delete one link, or delete all links with a confirmation step.
-- **Local only** — no accounts, analytics, servers, or external requests.
+- **Quick-action popup** — compact extension popup window for saving typed URLs, capturing the active tab with one click, filtering saved links with search, and deleting links.
+- **Dedicated Usage Dashboard** — click **View usage** in the popup to open a full, responsive dashboard tab (`usage.html`) showing today's total browsing time and a ranked list of websites with formatted durations (e.g. `1h 24m`).
+- **Simple Day Navigation** — review past days using straightforward **Previous day** and **Next day** buttons (no intrusive calendars or date pickers).
+- **Quiet, private time tracking** — silently counts active browsing time by domain in the background without notifications, banners, badges, or external network requests.
+- **Local storage only** — all links and time totals reside on your computer in `chrome.storage.local`.
 
-## Install (unpacked)
+---
 
-1. Open `chrome://extensions` in Chrome.
-2. Turn on **Developer mode**.
+## Installation & Setup
+
+### Option 1: Load Unpacked (Recommended for development)
+
+1. Open `chrome://extensions` in Google Chrome (or any Chromium browser).
+2. Enable **Developer mode** via the toggle switch in the upper-right corner.
 3. Click **Load unpacked**.
-4. Select this project folder (the folder containing `manifest.json`).
-5. Optional: pin **Lead Tracker** from the extensions toolbar menu.
+4. Select this project directory (the folder containing `manifest.json`).
+5. Pin **Lead Tracker** from the Chrome extension toolbar for fast access.
 
-No build step or `npm install` is required. After changing files, click the **Reload** button for the extension on `chrome://extensions`.
+*Note: No build step or `npm install` is required for unpacked loading. Any file changes take effect after clicking the reload button on `chrome://extensions`.*
 
-Existing links from the previous version's `localStorage` (`myLeads`) are migrated to `chrome.storage.local` the first time the new popup opens.
+### Option 2: Build with Vite (Optional)
 
-## Usage
+If bundling with Vite:
+```bash
+npm install
+npm run build
+```
+Vite will compile both `index.html` (the popup) and `usage.html` (the dashboard) into the `dist` directory according to `vite.config.js`.
 
-### Time spent
+---
 
-- The popup opens on today's totals.
-- Use the arrow buttons or the date field to view another day.
-- Use **Back to today** to return to the current day.
-- The status line shows whether a site is currently being tracked or tracking is paused.
+## How Tracking Works
 
-### Saved links
+The extension uses a Manifest V3 background service worker (`background.js`) to track active time safely and accurately:
 
-- Type a URL in the input and press **Enter** or click **Save**. A missing `https://` is added automatically.
-- Click **Save current tab** to save the page you are viewing.
-- Use the search box to filter by title, URL, or domain.
-- Click a link to open it in a new tab.
-- Use the `×` button to delete one link.
-- **Delete all links** asks for confirmation first. It never deletes time data.
+- **Active conditions**: Time is credited only when all of the following are true:
+  1. Chrome has a focused window.
+  2. The active tab is a normal `http://` or `https://` web page.
+  3. The user is actively interacting (not idle or screen-locked, determined via `chrome.idle`).
+- **Automatic pause**: Tracking immediately halts when Chrome is minimized/unfocused, when switching to browser-internal pages (`chrome://`, `chrome-extension://`, `about:`), or when the system goes idle.
+- **Accurate segmenting**:
+  - Tab switches, URL changes, and window focus changes accrue time up to the exact moment of switching.
+  - Periods that cross midnight are automatically split across local calendar dates.
+  - `chrome.storage.session` identifies fresh browser restarts so time spent while the browser was closed is never double-counted.
+  - `chrome.alarms` triggers a wake-up tick once per minute, ensuring active time is safely persisted even when the Manifest V3 service worker suspends.
+- **Domain grouping**: Totals are aggregated by domain (e.g. `github.com` with any leading `www.` stripped).
 
-## How tracking works
-
-The extension uses a Manifest V3 service worker (`background.js`) and keeps one active tracking segment at a time.
-
-- Time is counted only when all of these are true:
-  - Chrome has a focused window.
-  - The active tab is a normal `http://` or `https://` page.
-  - The computer is not idle or locked, according to `chrome.idle`.
-- Tracking is recalculated when:
-  - the active tab changes,
-  - a tab's URL changes,
-  - a Chrome window gains or loses focus,
-  - the idle/locked state changes,
-  - Chrome starts or the extension is installed/updated,
-  - a one-minute alarm fires,
-  - a short interval runs while the service worker happens to be alive.
-- Totals are stored as milliseconds under `timeData.days[YYYY-MM-DD][domain]` in `chrome.storage.local`.
-- Segments that cross local midnight are split into the correct local dates.
-- The current segment start is persisted with the totals, so elapsed time is added exactly once.
-- `chrome.storage.session` is used to tell a browser restart apart from a service-worker restart. Time while Chrome was closed is not credited.
-- If a gap between saves is longer than five minutes (for example, the computer slept), that gap is treated as inactive and is not added to totals.
-- The popup adds the few seconds since the last save to today's live display.
-
-Domains are stored as the page hostname with a leading `www.` removed. Other subdomains remain separate (for example, `m.youtube.com` and `youtube.com` are different).
+---
 
 ## Permissions
 
-| Permission | Why it is needed |
+| Permission | Purpose |
 | --- | --- |
-| `tabs` | Read the active tab's URL and title so the current tab can be saved and its domain can be tracked. |
-| `storage` | Store saved links and daily time totals locally in `chrome.storage.local`; use `chrome.storage.session` to distinguish browser restarts. |
-| `idle` | Pause tracking when the computer is idle or locked. |
-| `alarms` | Wake the service worker about once a minute so active time is saved even when the worker is suspended. |
+| `tabs` | Read the active tab's URL and title to save the current tab and track active website domains. |
+| `storage` | Store saved links and daily time totals locally on your machine via `chrome.storage.local`. |
+| `idle` | Detect user inactivity and system lock to pause tracking quietly. |
+| `alarms` | Periodically wake the background service worker to ensure accrued time is saved reliably. |
 
-There are no host permissions and no content scripts. The extension does not read page contents.
+*There are no host permissions, external network permissions, content scripts, or telemetry.*
 
-## Privacy
+---
 
-- All data stays on this device in Chrome extension storage.
-- Saved: links you explicitly save, active-time totals grouped by date and domain, and the current tracking segment.
-- Not collected: page contents, form input, keystrokes, or a full browsing-history log. Only the active tab is queried, and only its domain is stored for tracking.
-- There are no network requests, accounts, telemetry, or third-party services.
-- Removing the extension or clearing its site/extension data removes the stored links and time totals.
+## Practical Tracking Limitations
 
-A short version of this note is shown at the bottom of the popup.
+1. **Passive Media Inactivity**: `chrome.idle` detects user input with a 60-second threshold. Extended passive tasks without mouse or keyboard interaction (such as watching a long video full-screen without interaction) may be flagged as idle and pause tracking.
+2. **Subdomain Separation**: Tracking aggregates by hostname (minus `www.`). Different subdomains (such as `docs.google.com` vs `mail.google.com`) are tracked as distinct websites.
+3. **Internal & Non-HTTP Pages**: Internal browser pages (`chrome://*`, extensions, PDF viewers, `file://`) are excluded from tracking for privacy and technical reasons.
+4. **Machine Sleep / Service Worker Suspension**: If the operating system sleeps, suspicious gaps (>5 minutes) are discarded to avoid crediting downtime.
+5. **No Cross-Device Sync**: All data remains on the local browser profile; data does not sync across different devices or profiles.
 
-## Limitations
+---
 
-- `chrome.idle` is based on user input with a 60-second detection interval. Long passive activities such as watching a video may be treated as idle and pause tracking.
-- Time is grouped by exact hostname (minus `www.`), not by registrable domain, so subdomains can appear separately.
-- Browser-internal pages (`chrome://`, `about:`, extension pages, etc.), `file://` pages, and non-HTTP tabs are not tracked or saved.
-- Service-worker suspension and computer sleep can lose a small amount of time. Normal saves happen every 15 seconds while the worker is alive and at least once a minute via the alarm.
-- There is no sync, export, or account support. Data does not transfer between Chrome profiles or devices.
-- Dates use the computer's local timezone.
-- The included `package.json` and `vite.config.js` are optional starter scaffolding; they are not needed to load or run the extension.
+## Project Structure
 
-## Files
-
-- `manifest.json` — Manifest V3 configuration and permissions.
-- `background.js` — service worker that tracks active time and persists totals.
-- `index.html` — popup layout.
-- `index.css` — compact light/dark popup styling.
-- `index.js` — popup logic for time display and saved links.
-- `icon.png` — extension icon.
+- `manifest.json` — Manifest V3 extension configuration and permissions.
+- `background.js` — Service worker managing silent active-time tracking and persistence.
+- `index.html` — Compact extension popup layout (focused on quick link actions).
+- `index.css` — Styling for the compact extension popup window.
+- `index.js` — Popup controller for link saving, searching, and opening the dashboard.
+- `usage.html` — Dedicated, responsive website usage dashboard.
+- `usage.css` — Refined dark styling for the usage dashboard.
+- `usage.js` — Usage dashboard logic for day navigation and ranked website displays.
+- `vite.config.js` — Vite build configuration for multi-page output.
+- `icon.png` — Extension icon.

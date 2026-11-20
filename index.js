@@ -1,14 +1,4 @@
 const els = {
-    datePicker: document.getElementById("date-picker"),
-    prevDay: document.getElementById("prev-day"),
-    nextDay: document.getElementById("next-day"),
-    todayBtn: document.getElementById("today-btn"),
-    dayLabel: document.getElementById("day-label"),
-    dayTotal: document.getElementById("day-total"),
-    timeList: document.getElementById("time-list"),
-    timeEmpty: document.getElementById("time-empty"),
-    trackingStatus: document.getElementById("tracking-status"),
-    trackingText: document.getElementById("tracking-text"),
     urlInput: document.getElementById("url-input"),
     saveUrlBtn: document.getElementById("save-url-btn"),
     saveTabBtn: document.getElementById("save-tab-btn"),
@@ -21,84 +11,14 @@ const els = {
     deleteConfirm: document.getElementById("delete-confirm"),
     cancelDeleteAll: document.getElementById("cancel-delete-all"),
     confirmDeleteAll: document.getElementById("confirm-delete-all"),
-    headerStatus: document.getElementById("header-status"),
-    headerStatusText: document.getElementById("header-status-text"),
-    overviewTime: document.getElementById("overview-time"),
-    overviewLinks: document.getElementById("overview-links"),
-    overviewStatus: document.getElementById("overview-status")
+    viewUsageBtn: document.getElementById("view-usage-btn")
 };
 
-const LIVE_REFRESH_MS = 5000;
-
-let selectedDate = todayKey();
-let stats = null;
-let timeState = "loading";
-let timeRequestId = 0;
 let links = [];
 let linksReady = false;
 let linksBusy = false;
 let searchQuery = "";
 let statusTimer = null;
-
-function pad(value) {
-    return String(value).padStart(2, "0");
-}
-
-function dateKey(date) {
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function isDateKey(value) {
-    return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function todayKey() {
-    return dateKey(new Date());
-}
-
-function parseDateKey(key) {
-    const [year, month, day] = key.split("-").map(Number);
-    return new Date(year, month - 1, day, 12, 0, 0, 0);
-}
-
-function shiftDate(key, days) {
-    const date = parseDateKey(key);
-    date.setDate(date.getDate() + days);
-    return dateKey(date);
-}
-
-function formatDateLabel(key, isToday) {
-    const date = parseDateKey(key);
-    const now = new Date();
-
-    if (isToday) {
-        return `Today · ${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
-    }
-
-    const options = { weekday: "short", month: "short", day: "numeric" };
-    if (date.getFullYear() !== now.getFullYear()) {
-        options.year = "numeric";
-    }
-
-    return date.toLocaleDateString(undefined, options);
-}
-
-function formatDuration(milliseconds) {
-    const totalSeconds = Math.floor(Math.max(0, milliseconds) / 1000);
-
-    if (totalSeconds < 60) {
-        return totalSeconds > 0 ? "<1m" : "0m";
-    }
-
-    const totalMinutes = Math.floor(totalSeconds / 60);
-    if (totalMinutes < 60) {
-        return `${totalMinutes}m`;
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-}
 
 function domainFromUrl(rawUrl) {
     if (typeof rawUrl !== "string" || rawUrl.length === 0) {
@@ -212,243 +132,6 @@ function normalizeLink(item) {
     };
 }
 
-function sendRuntimeMessage(message) {
-    return new Promise((resolve) => {
-        try {
-            if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
-                // Running in browser standalone or preview mode
-                resolve(null);
-                return;
-            }
-            chrome.runtime.sendMessage(message, (response) => {
-                if (chrome.runtime.lastError) {
-                    resolve(null);
-                    return;
-                }
-                resolve(response || null);
-            });
-        } catch {
-            resolve(null);
-        }
-    });
-}
-
-async function loadTime() {
-    const requestedDate = selectedDate;
-    const requestId = ++timeRequestId;
-    const response = await sendRuntimeMessage({ type: "get-time-stats", date: requestedDate });
-
-    if (requestId !== timeRequestId || requestedDate !== selectedDate) {
-        return;
-    }
-
-    if (!response || response.error || response.date !== requestedDate) {
-        if (!stats) {
-            // Check if mock or preview data is available in standalone preview mode
-            if (typeof chrome === "undefined" || !chrome.runtime) {
-                stats = getMockStats(requestedDate);
-                timeState = "ready";
-                renderTime();
-                return;
-            }
-            timeState = "error";
-            renderTime();
-        }
-        return;
-    }
-
-    stats = response;
-    timeState = "ready";
-    renderTime();
-}
-
-function getMockStats(date) {
-    return {
-        date,
-        tracking: true,
-        activeDomain: "github.com",
-        activeSince: Date.now() - 145000,
-        totals: {
-            "github.com": 2840000,
-            "linear.app": 1920000,
-            "google.com": 940000,
-            "raycast.com": 620000
-        }
-    };
-}
-
-function updateDateControls() {
-    const today = todayKey();
-    els.datePicker.max = today;
-    els.nextDay.disabled = selectedDate >= today;
-    els.todayBtn.hidden = selectedDate === today;
-}
-
-function setDate(key) {
-    if (!isDateKey(key)) {
-        return;
-    }
-
-    const today = todayKey();
-    selectedDate = key > today ? today : key;
-    els.datePicker.value = selectedDate;
-    stats = null;
-    timeState = "loading";
-    timeRequestId += 1;
-    renderTime();
-    loadTime();
-}
-
-function createTimeRow(domain, milliseconds, maxMilliseconds) {
-    const item = document.createElement("li");
-    item.className = "time-row";
-
-    const formattedDuration = formatDuration(milliseconds);
-    const label = `${domain} — ${formattedDuration}`;
-    item.title = label;
-    item.setAttribute("aria-label", label);
-
-    const head = document.createElement("div");
-    head.className = "time-row-head";
-
-    const domainWrap = document.createElement("div");
-    domainWrap.className = "time-domain-wrap";
-
-    // Lucide Globe SVG
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("class", "domain-icon");
-    icon.setAttribute("width", "13");
-    icon.setAttribute("height", "13");
-    icon.setAttribute("viewBox", "0 0 24 24");
-    icon.setAttribute("fill", "none");
-    icon.setAttribute("stroke", "currentColor");
-    icon.setAttribute("stroke-width", "2");
-    icon.setAttribute("stroke-linecap", "round");
-    icon.setAttribute("stroke-linejoin", "round");
-    icon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>';
-
-    const domainEl = document.createElement("span");
-    domainEl.className = "time-domain";
-    domainEl.textContent = domain;
-    domainEl.title = domain;
-
-    domainWrap.append(icon, domainEl);
-
-    const durationEl = document.createElement("span");
-    durationEl.className = "time-duration";
-    durationEl.textContent = formattedDuration;
-
-    head.append(domainWrap, durationEl);
-
-    const bar = document.createElement("div");
-    bar.className = "time-bar";
-
-    const fill = document.createElement("div");
-    fill.className = "time-bar-fill";
-    const percent = Math.max(3, Math.min(100, Math.round((milliseconds / maxMilliseconds) * 100)));
-    fill.style.width = `${percent}%`;
-
-    bar.appendChild(fill);
-    item.append(head, bar);
-
-    return item;
-}
-
-function renderTime() {
-    const today = todayKey();
-    const isToday = selectedDate === today;
-
-    updateDateControls();
-    els.dayLabel.textContent = formatDateLabel(selectedDate, isToday);
-    els.trackingStatus.hidden = true;
-
-    if (timeState === "loading") {
-        els.dayTotal.textContent = "—";
-        if (els.overviewTime) els.overviewTime.textContent = "—";
-        els.timeList.replaceChildren();
-        els.timeEmpty.hidden = false;
-        els.timeEmpty.innerHTML = `
-            <svg class="empty-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <p class="empty-title">Loading time data…</p>
-        `;
-        return;
-    }
-
-    if (timeState === "error" || !stats) {
-        els.dayTotal.textContent = "—";
-        if (els.overviewTime) els.overviewTime.textContent = "—";
-        els.timeList.replaceChildren();
-        els.timeEmpty.hidden = false;
-        els.timeEmpty.innerHTML = `
-            <svg class="empty-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-            <p class="empty-title">Could not load time data</p>
-            <p class="empty-subtitle">Try reloading the extension popup</p>
-        `;
-        return;
-    }
-
-    const totals = new Map();
-    for (const [domain, milliseconds] of Object.entries(stats.totals || {})) {
-        if (typeof milliseconds === "number" && milliseconds > 0) {
-            totals.set(domain, milliseconds);
-        }
-    }
-
-    if (isToday && stats.tracking && stats.activeDomain && stats.activeSince) {
-        const liveMilliseconds = Math.max(0, Date.now() - stats.activeSince);
-        if (liveMilliseconds > 0) {
-            totals.set(
-                stats.activeDomain,
-                (totals.get(stats.activeDomain) || 0) + liveMilliseconds
-            );
-        }
-    }
-
-    const entries = [...totals.entries()]
-        .filter(([, milliseconds]) => milliseconds > 0)
-        .sort((a, b) => b[1] - a[1]);
-
-    const totalMilliseconds = entries.reduce((sum, [, milliseconds]) => sum + milliseconds, 0);
-    const formattedTotal = formatDuration(totalMilliseconds);
-    els.dayTotal.textContent = formattedTotal;
-    if (els.overviewTime) {
-        els.overviewTime.textContent = formattedTotal;
-    }
-    els.timeList.replaceChildren();
-
-    if (entries.length === 0) {
-        els.timeEmpty.hidden = false;
-        els.timeEmpty.innerHTML = `
-            <svg class="empty-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <p class="empty-title">${isToday ? "No time tracked yet today" : "No tracked time for this day"}</p>
-            <p class="empty-subtitle">${isToday ? "Open any website tab to start tracking" : "Navigate to today or another day"}</p>
-        `;
-    } else {
-        els.timeEmpty.hidden = true;
-        const maxMilliseconds = entries[0][1];
-
-        for (const [domain, milliseconds] of entries) {
-            els.timeList.appendChild(createTimeRow(domain, milliseconds, maxMilliseconds));
-        }
-    }
-
-    if (isToday) {
-        const isActive = Boolean(stats.tracking && stats.activeDomain);
-        els.trackingStatus.hidden = false;
-        els.trackingStatus.classList.toggle("is-active", isActive);
-        els.trackingText.textContent = isActive
-            ? `Tracking ${stats.activeDomain} now`
-            : "Tracking paused — active web tab needed";
-
-        if (els.headerStatus) {
-            els.headerStatus.classList.toggle("is-tracking", isActive);
-            if (els.headerStatusText) {
-                els.headerStatusText.textContent = isActive ? `Active: ${stats.activeDomain}` : "Ready";
-            }
-        }
-    }
-}
-
 async function migrateLegacyLinks() {
     let legacy = [];
 
@@ -500,7 +183,6 @@ async function loadLinks() {
                 links = await migrateLegacyLinks();
             }
         } else {
-            // Fallback for preview / standalone
             const stored = localStorage.getItem("savedLinks");
             if (stored) {
                 try {
@@ -569,13 +251,13 @@ function createLinkRow(link) {
     const item = document.createElement("li");
     item.className = "link-row";
 
-    // Icon Container
+    // Icon container
     const iconWrap = document.createElement("div");
     iconWrap.className = "link-icon-wrap";
     const globeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     globeSvg.setAttribute("class", "link-domain-icon");
-    globeSvg.setAttribute("width", "14");
-    globeSvg.setAttribute("height", "14");
+    globeSvg.setAttribute("width", "13");
+    globeSvg.setAttribute("height", "13");
     globeSvg.setAttribute("viewBox", "0 0 24 24");
     globeSvg.setAttribute("fill", "none");
     globeSvg.setAttribute("stroke", "currentColor");
@@ -630,13 +312,13 @@ function createLinkRow(link) {
     removeButton.type = "button";
     removeButton.className = "icon-button";
     removeButton.dataset.deleteId = link.id;
-    removeButton.title = "Delete lead";
+    removeButton.title = "Delete link";
     removeButton.setAttribute("aria-label", `Delete ${link.title || domain}`);
 
     const trashSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     trashSvg.setAttribute("class", "trash-icon");
-    trashSvg.setAttribute("width", "13");
-    trashSvg.setAttribute("height", "13");
+    trashSvg.setAttribute("width", "12");
+    trashSvg.setAttribute("height", "12");
     trashSvg.setAttribute("viewBox", "0 0 24 24");
     trashSvg.setAttribute("fill", "none");
     trashSvg.setAttribute("stroke", "currentColor");
@@ -661,9 +343,6 @@ function renderLinks() {
         : links;
 
     els.linkCount.textContent = query ? `${filtered.length}/${links.length}` : String(links.length);
-    if (els.overviewLinks) {
-        els.overviewLinks.textContent = String(links.length);
-    }
     els.deleteAllBtn.disabled = links.length === 0;
     els.linkList.replaceChildren();
 
@@ -672,8 +351,8 @@ function renderLinks() {
         els.deleteAllBtn.hidden = false;
         els.linkEmpty.hidden = false;
         els.linkEmpty.innerHTML = `
-            <svg class="empty-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            <p class="empty-title">No saved leads yet</p>
+            <svg class="empty-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <p class="empty-title">No saved links yet</p>
             <p class="empty-subtitle">Paste a URL above or click "Save current tab"</p>
         `;
         return;
@@ -682,8 +361,8 @@ function renderLinks() {
     if (filtered.length === 0) {
         els.linkEmpty.hidden = false;
         els.linkEmpty.innerHTML = `
-            <svg class="empty-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <p class="empty-text">No saved leads match <strong class="match-query">"${escapeHtml(searchQuery.trim())}"</strong></p>
+            <svg class="empty-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <p class="empty-text">No saved links match <strong class="match-query">"${escapeHtml(searchQuery.trim())}"</strong></p>
         `;
     } else {
         els.linkEmpty.hidden = true;
@@ -723,7 +402,7 @@ function saveTypedLink() {
         }
 
         if (links.some((link) => link.url === url)) {
-            showStatus("That lead URL is already saved.", "error");
+            showStatus("That link is already saved.", "error");
             els.urlInput.focus();
             return;
         }
@@ -777,7 +456,6 @@ function saveCurrentTab() {
         }
 
         if (!tab || !tab.url) {
-            // Standalone preview fallback
             if (typeof chrome === "undefined" || !chrome.tabs) {
                 tab = { url: window.location.href, title: document.title || "Current Page" };
             } else {
@@ -793,7 +471,7 @@ function saveCurrentTab() {
         }
 
         if (links.some((link) => link.url === url)) {
-            showStatus("That lead URL is already saved.", "error");
+            showStatus("That link is already saved.", "error");
             return;
         }
 
@@ -829,7 +507,7 @@ function deleteLink(id) {
             return;
         }
 
-        const label = link ? link.title || domainFromUrl(link.url) || "lead" : "lead";
+        const label = link ? link.title || domainFromUrl(link.url) || "link" : "link";
         showStatus(`Deleted "${label}".`, "success");
     });
 }
@@ -860,9 +538,18 @@ function deleteAllLinks() {
         }
 
         hideDeleteConfirm(false);
-        showStatus("All saved leads deleted.", "success");
+        showStatus("All saved links deleted.", "success");
         els.urlInput.focus();
     });
+}
+
+function openUsageDashboard() {
+    if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+        const usageUrl = chrome.runtime.getURL("usage.html");
+        chrome.tabs.create({ url: usageUrl });
+    } else {
+        window.open("usage.html", "_blank");
+    }
 }
 
 function bindEvents() {
@@ -875,28 +562,6 @@ function bindEvents() {
 
     els.saveUrlBtn.addEventListener("click", saveTypedLink);
     els.saveTabBtn.addEventListener("click", saveCurrentTab);
-
-    els.prevDay.addEventListener("click", () => {
-        setDate(shiftDate(selectedDate, -1));
-    });
-
-    els.nextDay.addEventListener("click", () => {
-        if (selectedDate < todayKey()) {
-            setDate(shiftDate(selectedDate, 1));
-        }
-    });
-
-    els.todayBtn.addEventListener("click", () => {
-        setDate(todayKey());
-    });
-
-    els.datePicker.addEventListener("change", () => {
-        if (isDateKey(els.datePicker.value)) {
-            setDate(els.datePicker.value);
-        } else {
-            els.datePicker.value = selectedDate;
-        }
-    });
 
     els.linkSearch.addEventListener("input", () => {
         searchQuery = els.linkSearch.value;
@@ -921,6 +586,10 @@ function bindEvents() {
     els.cancelDeleteAll.addEventListener("click", () => hideDeleteConfirm());
     els.confirmDeleteAll.addEventListener("click", deleteAllLinks);
 
+    if (els.viewUsageBtn) {
+        els.viewUsageBtn.addEventListener("click", openUsageDashboard);
+    }
+
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && !els.deleteConfirm.hidden) {
             event.preventDefault();
@@ -930,18 +599,8 @@ function bindEvents() {
 }
 
 function init() {
-    els.datePicker.max = todayKey();
-    els.datePicker.value = selectedDate;
     bindEvents();
-    renderTime();
     loadLinks();
-    loadTime();
-
-    setInterval(() => {
-        if (!document.hidden) {
-            loadTime();
-        }
-    }, LIVE_REFRESH_MS);
 }
 
 init();

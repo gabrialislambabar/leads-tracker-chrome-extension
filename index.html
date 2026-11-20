@@ -2,204 +2,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>LeadTracker &mdash; Links &amp; Active Time</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadTracker</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div class="app-layout">
-        <!-- Top App Navigation / Header -->
+    <div class="popup-container">
+        <!-- Header -->
         <header class="app-header">
             <div class="brand-wrap">
                 <div class="brand-logo" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
                     </svg>
                 </div>
                 <div class="brand-meta">
-                    <div class="brand-title-row">
-                        <h1 class="brand-title">LeadTracker</h1>
-                        <span class="version-tag">v2.0</span>
-                    </div>
-                    <p class="app-subtitle">Saved links &amp; active time</p>
+                    <h1 class="brand-title">LeadTracker</h1>
+                    <p class="app-subtitle">Saved links</p>
                 </div>
             </div>
 
-            <!-- Header Quick Badge -->
-            <div class="header-status-badge" id="header-status" aria-label="Status indicator">
-                <span class="status-indicator-dot" aria-hidden="true"></span>
-                <span class="header-status-text" id="header-status-text">Ready</span>
-            </div>
+            <!-- View Usage Button (Opens Usage Dashboard in new tab) -->
+            <button type="button" id="view-usage-btn" class="button button-usage" title="Open time tracking dashboard in a new tab">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>View usage</span>
+            </button>
         </header>
 
-        <!-- Quick Metrics Overview Strip (active on tablets/desktops) -->
-        <aside class="metrics-strip" aria-label="Workspace overview">
-            <div class="metric-card">
-                <div class="metric-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <span>Tracked Today</span>
+        <!-- Save Link Controls -->
+        <section class="save-section" aria-label="Save links">
+            <div class="save-row">
+                <div class="input-with-icon">
+                    <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <input type="text" id="url-input" placeholder="Paste URL (e.g. github.com)..." autocomplete="off" spellcheck="false" aria-label="URL to save">
                 </div>
-                <div class="metric-value" id="overview-time">&mdash;</div>
+                <button type="button" id="save-url-btn" class="button button-primary" disabled aria-label="Save typed URL">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    <span>Save</span>
+                </button>
             </div>
-            <div class="metric-card">
-                <div class="metric-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    <span>Saved Leads</span>
-                </div>
-                <div class="metric-value" id="overview-links">0</div>
+
+            <div class="save-actions">
+                <button type="button" id="save-tab-btn" class="button button-secondary" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/>
+                    </svg>
+                    <span>Save current tab</span>
+                </button>
             </div>
-            <div class="metric-card">
-                <div class="metric-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>Storage Mode</span>
+
+            <!-- Status Alert Message -->
+            <div id="url-status" class="status-message" role="status" aria-live="polite" hidden></div>
+        </section>
+
+        <!-- Saved Links Panel -->
+        <section class="links-panel" aria-labelledby="saved-heading">
+            <div class="section-head">
+                <div class="head-title-wrap">
+                    <h2 id="saved-heading">Saved links</h2>
+                    <span id="link-count" class="count-badge" title="Total saved links">0</span>
                 </div>
-                <div class="metric-value metric-status" id="overview-status">Local &amp; Secure</div>
+                <div class="search-wrap">
+                    <div class="input-with-icon search-input-wrap">
+                        <svg class="input-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input type="search" id="link-search" placeholder="Search links..." autocomplete="off" aria-label="Search saved links">
+                    </div>
+                </div>
             </div>
-        </aside>
 
-        <!-- Main Workspace Panels -->
-        <main class="workspace-grid">
-            <!-- PANEL 1: TIME SPENT -->
-            <section class="panel panel-time" aria-labelledby="time-heading">
-                <div class="section-head">
-                    <div class="heading-with-icon">
-                        <svg class="heading-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        <h2 id="time-heading">Time Spent</h2>
-                    </div>
-                    <button type="button" id="today-btn" class="chip-button" hidden aria-label="Jump back to today">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-                        <span>Today</span>
-                    </button>
+            <div class="links-list-wrap">
+                <ul id="link-list" class="link-list"></ul>
+                <div id="link-empty" class="empty-state">
+                    <svg class="empty-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <p class="empty-title">No saved links yet</p>
+                    <p class="empty-subtitle">Paste a URL above or click "Save current tab"</p>
                 </div>
+            </div>
 
-                <div class="date-nav">
-                    <button type="button" id="prev-day" class="date-button" title="Previous day" aria-label="Previous day">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    </button>
-                    <div class="date-picker-wrap">
-                        <svg class="date-picker-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                        <input type="date" id="date-picker" aria-label="Select a day">
+            <div class="links-footer">
+                <button type="button" id="delete-all-btn" class="text-button danger-text" disabled>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    <span>Delete all links</span>
+                </button>
+            </div>
+
+            <!-- Confirmation Modal / Box -->
+            <div id="delete-confirm" class="confirm-box" hidden>
+                <div class="confirm-content">
+                    <div class="confirm-icon-wrap" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
                     </div>
-                    <button type="button" id="next-day" class="date-button" title="Next day" aria-label="Next day">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                    </button>
-                </div>
-
-                <div class="day-summary">
-                    <div class="day-summary-meta">
-                        <span class="day-summary-label">ACTIVE TIME</span>
-                        <p id="day-label" class="day-label">Today</p>
-                    </div>
-                    <p id="day-total" class="day-total">0m</p>
-                </div>
-
-                <div class="list-container time-list-container">
-                    <ul id="time-list" class="time-list"></ul>
-                    <div id="time-empty" class="empty-state">
-                        <svg class="empty-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <p class="empty-title">No time tracked for this day</p>
+                    <div class="confirm-text">
+                        <h3 class="confirm-title">Delete all saved links?</h3>
+                        <p class="confirm-desc">This cannot be undone. Time data is preserved.</p>
                     </div>
                 </div>
-
-                <div id="tracking-status" class="tracking-status" hidden>
-                    <span class="status-beacon" aria-hidden="true">
-                        <span class="status-dot"></span>
-                        <span class="status-ping"></span>
-                    </span>
-                    <span id="tracking-text" class="tracking-text">Tracking paused</span>
+                <div class="confirm-actions">
+                    <button type="button" id="cancel-delete-all" class="button button-ghost">Cancel</button>
+                    <button type="button" id="confirm-delete-all" class="button button-danger">Delete all</button>
                 </div>
-            </section>
-
-            <!-- PANEL 2: SAVED LINKS -->
-            <section class="panel panel-links" aria-labelledby="links-heading">
-                <div class="section-head">
-                    <div class="heading-with-icon">
-                        <svg class="heading-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                        <h2 id="links-heading">Saved Leads</h2>
-                    </div>
-                    <span id="link-count" class="count-badge" title="Total saved leads">0</span>
-                </div>
-
-                <!-- Input actions -->
-                <div class="save-box">
-                    <div class="save-row">
-                        <div class="input-with-icon">
-                            <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                            <input type="text" id="url-input" placeholder="Paste a URL (e.g. github.com)..." autocomplete="off" spellcheck="false" aria-label="URL to save">
-                        </div>
-                        <button type="button" id="save-url-btn" class="button button-primary" disabled aria-label="Save typed URL">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                            <span>Save</span>
-                        </button>
-                    </div>
-
-                    <div class="save-actions">
-                        <button type="button" id="save-tab-btn" class="button button-secondary" disabled>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/></svg>
-                            <span>Save current tab</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Status alert feedback -->
-                <div id="url-status" class="status-message" role="status" aria-live="polite" hidden></div>
-
-                <!-- Search filter -->
-                <div class="search-row">
-                    <div class="input-with-icon">
-                        <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        <input type="search" id="link-search" placeholder="Search saved leads by title or domain..." autocomplete="off" aria-label="Search saved links">
-                    </div>
-                </div>
-
-                <!-- Links list -->
-                <div class="list-container links-list-container">
-                    <ul id="link-list" class="link-list"></ul>
-                    <div id="link-empty" class="empty-state">
-                        <svg class="empty-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        <p class="empty-title">No saved leads yet</p>
-                        <p class="empty-subtitle">Paste a URL above or save your active tab</p>
-                    </div>
-                </div>
-
-                <div class="links-footer">
-                    <button type="button" id="delete-all-btn" class="text-button danger-text" disabled>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                        <span>Delete all leads</span>
-                    </button>
-                </div>
-
-                <!-- Confirmation Box -->
-                <div id="delete-confirm" class="confirm-box" hidden>
-                    <div class="confirm-content">
-                        <div class="confirm-icon-wrap" aria-hidden="true">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                        </div>
-                        <div class="confirm-text">
-                            <h4 class="confirm-title">Delete all saved leads?</h4>
-                            <p class="confirm-desc">This action cannot be undone. Tracked time data is preserved.</p>
-                        </div>
-                    </div>
-                    <div class="confirm-actions">
-                        <button type="button" id="cancel-delete-all" class="button button-ghost">Cancel</button>
-                        <button type="button" id="confirm-delete-all" class="button button-danger">Delete all</button>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Privacy & Local Storage Note -->
-        <footer class="privacy-note">
-            <svg class="privacy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <p><strong>Privacy:</strong> Time totals &amp; saved leads stay on this device. Zero network requests or background tracking.</p>
-        </footer>
+            </div>
+        </section>
     </div>
 
     <script src="index.js"></script>
